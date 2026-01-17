@@ -1,0 +1,7 @@
+{
+  "name": "SamartAI",
+  "description": "SamartAI is a dual-performance AI platform (web and Telegram bot) that helps students, especially from rural and semi-urban India, discover government scholarships using AI-powered intent understanding, voice input, and multilingual support. It provides simple conversational search for verified government schemes.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
