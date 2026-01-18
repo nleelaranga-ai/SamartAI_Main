@@ -1,192 +1,249 @@
-// services/scholarshipService.ts
 import { Scholarship } from '../types';
 
-const MOCK_SCHOLARSHIPS: Scholarship[] = [
+// --- 1. THE DATABASE (Converted from your Python file) ---
+const SCHOLARSHIPS_DB: Scholarship[] = [
+  // 1. GENERAL (SC/ST/BC/Minority/Kapu)
   {
-    id: 's001',
-    name: 'National Scholarship for SC/ST Students',
-    category: 'SC/ST',
-    incomeLimit: 250000, // ₹2.5 Lakhs
-    description: 'This scholarship aims to provide financial assistance to Scheduled Caste and Scheduled Tribe students pursuing higher education.',
-    applyLink: 'https://scholarships.gov.in/scheme/1234',
-    eligibilityCriteria: ['Must belong to SC/ST category', 'Family income below ₹2.5 Lakhs per annum', 'Minimum 60% marks in previous examination'],
-    documentsRequired: ['Caste Certificate', 'Income Certificate', 'Academic Marksheets'],
-    deadline: '2024-10-31',
+    id: '1',
+    name: "Jagananna Vidya Deevena (RTF)",
+    provider: "Andhra Pradesh Govt",
+    category: "All (SC/ST/BC/Kapu/Minority)",
+    amount: "Full Fee Reimbursement",
+    deadline: "Open",
+    description: "Full fee reimbursement for ITI, Polytechnic, Degree, B.Tech, MBA, MCA. Credited directly to mother's account.",
+    eligibility: ["Income < ₹2.5L", "75% Attendance"],
+    applicationLink: "https://jnanabhumi.ap.gov.in/",
+    tags: ["fee", "reimbursement", "btech", "degree", "engineering", "mba", "mca", "polytechnic", "general", "all"]
   },
   {
-    id: 's002',
-    name: 'Post Matric Scholarship for Minorities',
-    category: 'Minority',
-    incomeLimit: 200000, // ₹2 Lakhs
-    description: 'Financial support for minority students (Muslims, Sikhs, Christians, Buddhists, Zoroastrians and Jains) for post-matriculation studies.',
-    applyLink: 'https://scholarships.gov.in/scheme/2345',
-    eligibilityCriteria: ['Must belong to a notified minority community', 'Family income below ₹2 Lakhs per annum', 'Minimum 50% marks in previous examination'],
-    documentsRequired: ['Minority Certificate', 'Income Certificate', 'Academic Marksheets'],
-    deadline: '2024-11-15',
+    id: '2',
+    name: "Jagananna Vasathi Deevena (MTF)",
+    provider: "Andhra Pradesh Govt",
+    category: "All (SC/ST/BC/Kapu/Minority)",
+    amount: "₹10,000 - ₹20,000 / year",
+    deadline: "Open",
+    description: "Financial aid for food & hostel expenses. ITI: ₹10K, Polytechnic: ₹15K, Degree/Engg: ₹20K.",
+    eligibility: ["Income < ₹2.5L"],
+    applicationLink: "https://jnanabhumi.ap.gov.in/",
+    tags: ["hostel", "food", "mess", "boarding", "lodging", "stay", "general", "all"]
   },
   {
-    id: 's003',
-    name: 'Prime Minister’s Scholarship Scheme for RPF/RPSF',
-    category: 'General',
-    incomeLimit: 600000, // ₹6 Lakhs (higher for this specific scheme)
-    description: 'Scholarship for dependent wards of Ex/Serving RPF/RPSF personnel pursuing higher professional courses.',
-    applyLink: 'https://scholarships.gov.in/scheme/3456',
-    eligibilityCriteria: ['Wards of RPF/RPSF personnel', 'Minimum 60% in 10+2/Diploma/Graduation', 'Professional courses only'],
-    documentsRequired: ['Service Certificate', 'Academic Marksheets'],
-    deadline: '2024-09-30',
+    id: '3',
+    name: "Ambedkar Overseas Vidya Nidhi",
+    provider: "Andhra Pradesh Govt",
+    category: "SC/ST",
+    amount: "Up to ₹15 Lakhs",
+    deadline: "September / February",
+    description: "Financial assistance for SC/ST students pursuing higher studies (Masters/PhD) abroad.",
+    eligibility: ["Income < ₹6L", "Valid Passport"],
+    applicationLink: "https://jnanabhumi.ap.gov.in/",
+    tags: ["abroad", "foreign", "masters", "phd", "ms", "overseas", "sc", "st"]
   },
   {
-    id: 's004',
-    name: 'Pre-Matric Scholarship for OBC Students',
-    category: 'OBC',
-    incomeLimit: 150000, // ₹1.5 Lakhs
-    description: 'A scholarship scheme for Other Backward Classes students studying in classes I to X.',
-    applyLink: 'https://socialjustice.nic.in/scheme/pre_matric_obc',
-    eligibilityCriteria: ['Must belong to OBC category', 'Family income below ₹1.5 Lakhs per annum'],
-    documentsRequired: ['Caste Certificate', 'Income Certificate'],
-    deadline: '2024-10-20',
+    id: '4',
+    name: "NSP Post Matric Scholarship",
+    provider: "Central Govt",
+    category: "Minority",
+    amount: "Variable",
+    deadline: "October",
+    description: "Central scholarship for Minority community students from Class 11 to Ph.D.",
+    eligibility: ["Income < ₹2L", "50% Marks"],
+    applicationLink: "https://scholarships.gov.in/",
+    tags: ["muslim", "christian", "sikh", "minority", "jain", "central"]
+  },
+
+  // 2. BRAHMIN WELFARE
+  {
+    id: '101',
+    name: "Bharati Scheme - Graduation",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Financial Aid",
+    deadline: "Open",
+    description: "Financial assistance for Brahmin students pursuing any regular 3-year graduation course (BA, BCom, BSc).",
+    eligibility: ["Income < ₹3L", "EWS"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["degree", "b.a", "b.com", "b.sc", "brahmin", "upper caste"]
   },
   {
-    id: 's005',
-    name: 'Chief Minister’s Scholarship for Meritorious Students (State-specific, e.g., Andhra Pradesh)',
-    category: 'General', // Can be general or specific based on state rules
-    incomeLimit: 300000, // ₹3 Lakhs
-    description: 'A state-level scholarship for meritorious students from Andhra Pradesh pursuing undergraduate courses.',
-    applyLink: 'https://ap.gov.in/scholarship',
-    eligibilityCriteria: ['Resident of Andhra Pradesh', 'Minimum 80% marks in 10+2', 'Family income below ₹3 Lakhs per annum', 'Pursuing undergraduate degree'],
-    documentsRequired: ['Domicile Certificate', 'Academic Marksheets'],
-    deadline: '2024-11-01',
+    id: '102',
+    name: "Bharati Scheme - Post-Graduation",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Financial Aid",
+    deadline: "Open",
+    description: "Support for Brahmin students pursuing 2-year+ PG courses like M.Sc, M.Com, M.Tech, MBA.",
+    eligibility: ["Income < ₹3L"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["pg", "masters", "mba", "mca", "mtech", "brahmin"]
   },
   {
-    id: 's006',
-    name: 'Scholarship for Students with Disabilities',
-    category: 'Disabled',
-    incomeLimit: 250000, // ₹2.5 Lakhs
-    description: 'Financial assistance for students with disabilities to pursue technical and professional education.',
-    applyLink: 'https://disabilityaffairs.gov.in/content/page/scholarships.php',
-    eligibilityCriteria: ['Must have a disability certificate (40% or more disability)', 'Family income below ₹2.5 Lakhs per annum', 'Enrolled in a technical/professional course'],
-    documentsRequired: ['Disability Certificate', 'Income Certificate', 'Admission Proof'],
-    deadline: '2024-10-25',
+    id: '103',
+    name: "Bharati Scheme - Professional",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Financial Aid",
+    deadline: "Open",
+    description: "Financial assistance for Brahmin students pursuing professional courses like B.Tech, Medicine, Pharmacy.",
+    eligibility: ["Income < ₹3L"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["professional", "medicine", "engineering", "btech", "pharmacy", "brahmin"]
   },
   {
-    id: 's007',
-    name: 'National Means Cum Merit Scholarship Scheme (NMMSS)',
-    category: 'EWS', // Economically Weaker Section
-    incomeLimit: 350000, // ₹3.5 Lakhs
-    description: 'Provides scholarships to meritorious students from economically weaker sections to arrest their dropout at Class VIII and encourage them to continue study at secondary stage.',
-    applyLink: 'https://scholarships.gov.in/scheme/nmms',
-    eligibilityCriteria: ['Students studying in Class IX to XII', 'Family income below ₹3.5 Lakhs per annum', 'Must have cleared NMMS examination'],
-    documentsRequired: ['Income Certificate', 'NMMS Result'],
-    deadline: '2024-12-05',
+    id: '104',
+    name: "Bharati Scheme - Intermediate/ITI",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Financial Aid",
+    deadline: "Open",
+    description: "Financial assistance for eligible poor Brahmin students pursuing Intermediate, ITI, or Polytechnic.",
+    eligibility: ["Income < ₹3L"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["inter", "intermediate", "diploma", "iti", "polytechnic", "brahmin"]
   },
   {
-    id: 's008',
-    name: 'Inspire Scholarship (SHE)',
-    category: 'Merit',
-    incomeLimit: 800000, // No income limit for meritorious usually
-    description: 'Scholarship for Higher Education (SHE) component of INSPIRE (Innovation in Science Pursuit for Inspired Research) scheme to attract talented youth into Science Studies.',
-    applyLink: 'https://online-inspire.gov.in/',
-    eligibilityCriteria: ['Top 1% in Class 12th board exams', 'Enrolled in B.Sc./B.S./Int. M.Sc./Int. M.S. courses in basic & natural sciences'],
-    documentsRequired: ['Class 12 Marksheet', 'Admission Proof'],
-    deadline: '2024-09-15',
+    id: '105',
+    name: "Bharati Overseas Scheme",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Up to ₹20 Lakhs",
+    deadline: "Variable",
+    description: "Financial aid for Brahmin students who secured admission for a Master's degree abroad.",
+    eligibility: ["Income < ₹6L"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["abroad", "foreign", "masters", "ms", "brahmin"]
   },
   {
-    id: 's009',
-    name: 'Central Sector Scheme of Scholarship for College and University Students',
-    category: 'Merit-cum-Means',
-    incomeLimit: 450000, // ₹4.5 Lakhs
-    description: 'Awarded to meritorious students for pursuing higher studies in colleges and universities.',
-    applyLink: 'https://scholarships.gov.in/scheme/css',
-    eligibilityCriteria: ['Above 80th percentile of successful candidates in 10+2', 'Family income below ₹4.5 Lakhs per annum', 'Pursuing regular courses'],
-    documentsRequired: ['Academic Marksheets', 'Income Certificate'],
-    deadline: '2024-10-10',
+    id: '106',
+    name: "Veda Vyasa Scheme",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Annual Assistance",
+    deadline: "Open",
+    description: "Annual financial assistance to encourage Vedic Education.",
+    eligibility: ["Vedic Student", "Income < ₹3L"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["veda", "vedic", "archaka", "purohit", "brahmin", "priest"]
   },
   {
-    id: 's010',
-    name: 'National Scholarship for Single Girl Child',
-    category: 'Girls',
-    incomeLimit: 0, // Not based on income, typically merit-based
-    description: 'A scheme to support higher education for single girl children.',
-    applyLink: 'https://www.ugc.ac.in/sgc',
-    eligibilityCriteria: ['Must be a single girl child in the family', 'Admitted to first year of PG courses', 'Age limit applies'],
-    documentsRequired: ['Affidavit for Single Girl Child', 'Admission Proof'],
-    deadline: '2024-11-20',
+    id: '107',
+    name: "Gayathri Awards",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Merit Award",
+    deadline: "After Results",
+    description: "Awards for toppers in SSC, Intermediate, Graduation, or Professional courses.",
+    eligibility: ["Merit Rank", "Income < ₹3L"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["topper", "merit", "rank", "award", "brahmin"]
   },
+  {
+    id: '108',
+    name: "Bharati Scheme (CA)",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Financial Aid",
+    deadline: "Open",
+    description: "Financial assistance for Brahmin students pursuing CA Intern and Final.",
+    eligibility: ["Income < ₹3L"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["ca", "chartered accountant", "ipcc", "brahmin"]
+  },
+  {
+    id: '109',
+    name: "Bharati School Education",
+    provider: "AP Brahmin Corp",
+    category: "Brahmin",
+    amount: "Financial Aid",
+    deadline: "June/July",
+    description: "Financial assistance for Brahmin students in Class 1 to Class 10.",
+    eligibility: ["Income < ₹3L"],
+    applicationLink: "https://apadapter.ap.gov.in/",
+    tags: ["school", "class 1", "class 10", "child", "brahmin"]
+  },
+
+  // 3. WORKERS & DISABLED
+  {
+    id: '201',
+    name: "BOC Workers Children Scholarship",
+    provider: "Labour Dept",
+    category: "Construction Workers",
+    amount: "Variable",
+    deadline: "Open",
+    description: "Scholarships for children of registered Building & Other Construction workers.",
+    eligibility: ["Parent Registered with BOC", "Income < ₹3L"],
+    applicationLink: "https://labour.ap.gov.in/",
+    tags: ["labour", "worker", "construction", "mason", "daily wage"]
+  },
+  {
+    id: '301',
+    name: "Sanction of Laptops",
+    provider: "Dept for Differently Abled",
+    category: "Differently Abled",
+    amount: "Free Laptop",
+    deadline: "Open",
+    description: "Distribution of laptops to visually, hearing, speech, and orthopedically challenged students in professional courses.",
+    eligibility: ["Professional Course", "Income < ₹3L"],
+    applicationLink: "https://apte.ap.gov.in/",
+    tags: ["laptop", "computer", "disabled", "handicapped", "blind", "deaf"]
+  },
+  {
+    id: '302',
+    name: "Motorized Three Wheelers",
+    provider: "Dept for Differently Abled",
+    category: "Differently Abled",
+    amount: "Free Vehicle",
+    deadline: "Open",
+    description: "Provision of motorized three-wheelers to eligible orthopedically challenged persons for mobility.",
+    eligibility: ["Orthopedic Disability", "Income < ₹3L"],
+    applicationLink: "https://apte.ap.gov.in/",
+    tags: ["vehicle", "scooter", "bike", "disabled", "handicapped", "mobility"]
+  },
+  {
+    id: '303',
+    name: "Daisy Players",
+    provider: "Dept for Differently Abled",
+    category: "Differently Abled",
+    amount: "Free Audio Player",
+    deadline: "Open",
+    description: "Distribution of Daisy Players (Audio Books) to visually challenged students from 9th Class to Degree.",
+    eligibility: ["Visually Challenged", "Income < ₹3L"],
+    applicationLink: "https://apte.ap.gov.in/",
+    tags: ["blind", "audio", "player", "daisy", "disabled", "visually challenged"]
+  }
 ];
 
-interface SearchOptions {
-  query?: string;
-  category?: string;
-  incomeLimit?: number;
-  studyField?: string;
-  location?: string;
-  gender?: string;
-  educationLevel?: string;
-}
-
+// --- 2. THE LOCAL BRAIN (Search Logic) ---
 export const scholarshipService = {
-  /**
-   * Simulates fetching and filtering scholarships.
-   * @param options Criteria to filter scholarships.
-   * @returns A promise resolving to an array of matching scholarships.
-   */
-  async searchScholarships(options: SearchOptions): Promise<Scholarship[]> {
-    console.log("Searching scholarships with options:", options);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  
+  // This function replaces Google AI. It runs instantly on the user's laptop.
+  searchScholarships: async (query: string): Promise<Scholarship[]> => {
+    // 1. Simulate "Thinking" time (0.8 seconds) to feel like AI
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-    let results = [...MOCK_SCHOLARSHIPS];
+    const lowerQuery = query.toLowerCase();
+    
+    // 2. Filter Logic
+    return SCHOLARSHIPS_DB.filter(scholarship => {
+      // A. Direct Category Match (e.g., user types "SC")
+      if (scholarship.category.toLowerCase().includes(lowerQuery)) return true;
+      
+      // B. Name Match (e.g., user types "Jagananna")
+      if (scholarship.name.toLowerCase().includes(lowerQuery)) return true;
+      
+      // C. Tag Match (e.g., user types "BTech" -> matches "engineering" tag)
+      if (scholarship.tags && scholarship.tags.some(tag => lowerQuery.includes(tag))) return true;
+      
+      // D. "General" Logic: If user asks for general schemes, give them the "All" category
+      if (lowerQuery.includes('general') || lowerQuery.includes('all')) {
+        if (scholarship.category.includes('All')) return true;
+      }
 
-    if (options.query) {
-      const lowerQuery = options.query.toLowerCase();
-      results = results.filter(
-        (s) =>
-          s.name.toLowerCase().includes(lowerQuery) ||
-          s.description.toLowerCase().includes(lowerQuery) ||
-          s.category.toLowerCase().includes(lowerQuery) ||
-          s.eligibilityCriteria?.some(c => c.toLowerCase().includes(lowerQuery))
-      );
-    }
-
-    if (options.category) {
-      const lowerCategory = options.category.toLowerCase();
-      results = results.filter((s) => s.category.toLowerCase() === lowerCategory);
-    }
-
-    if (options.incomeLimit !== undefined && options.incomeLimit > 0) {
-      results = results.filter((s) => s.incomeLimit === 0 || s.incomeLimit >= options.incomeLimit);
-    }
-
-    // Add more filtering logic for studyField, location, gender, educationLevel if needed
-    // For now, these are illustrative and mostly covered by 'query' based filtering
-
-    // Simple keyword matching for study field
-    if (options.studyField) {
-      const lowerStudyField = options.studyField.toLowerCase();
-      results = results.filter(s =>
-        s.name.toLowerCase().includes(lowerStudyField) ||
-        s.description.toLowerCase().includes(lowerStudyField) ||
-        s.eligibilityCriteria?.some(c => c.toLowerCase().includes(lowerStudyField))
-      );
-    }
-
-    // Simple keyword matching for gender
-    if (options.gender) {
-      const lowerGender = options.gender.toLowerCase();
-      results = results.filter(s =>
-        s.name.toLowerCase().includes(lowerGender) ||
-        s.description.toLowerCase().includes(lowerGender) ||
-        s.eligibilityCriteria?.some(c => c.toLowerCase().includes(lowerGender))
-      );
-    }
-
-    // Prioritize exact matches or more relevant ones if any advanced scoring was implemented
-    // For mock, we'll just return the filtered list
-    return results;
+      return false;
+    });
   },
 
-  async getAllScholarships(): Promise<Scholarship[]> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return [...MOCK_SCHOLARSHIPS];
-  },
+  getAllScholarships: async (): Promise<Scholarship[]> => {
+    return SCHOLARSHIPS_DB;
+  }
 };
