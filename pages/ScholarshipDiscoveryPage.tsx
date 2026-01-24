@@ -4,8 +4,8 @@ import { ChatWindow } from '../components/ChatWindow';
 import { useAppContext } from '../context/AppContext';
 import { USER_MESSAGES } from '../constants';
 
-// 👇 YOUR RENDER URL (Make sure this is correct!)
-const BACKEND_URL = "https://samartai-backend.onrender.com"; 
+// 👇 THIS IS YOUR LIVE BACKEND URL FROM THE LOGS
+const BACKEND_URL = "https://samartai-dup.onrender.com"; 
 
 export const ScholarshipDiscoveryPage: React.FC = () => {
   const { messages, addMessage, isRecording, setIsRecording, selectedLanguage } = useAppContext();
@@ -46,7 +46,7 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
 
     } catch (error) {
       console.error("Error:", error);
-      addMessage({ type: 'ai', text: "⚠️ Server is sleeping. Please wake it up on Render!" });
+      addMessage({ type: 'ai', text: "⚠️ Server is waking up. Please try again in 30 seconds!" });
     } finally {
       setIsLoadingAI(false);
     }
