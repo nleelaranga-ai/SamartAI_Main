@@ -1,20 +1,31 @@
-// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 const app = express();
-app.use(cors()); 
+
+// 1. ALLOW ALL ORIGINS (Fixes CORS issues)
+app.use(cors({
+  origin: '*', 
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// 1. Initialize Gemini
+// 2. LOG EVERY REQUEST (To debug connection)
+app.use((req, res, next) => {
+  console.log(`📡 Incoming Request: ${req.method} ${req.url}`);
+  next();
+});
+
+// Gemini Setup
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// 2. THE KNOWLEDGE BASE (Lives on the Server now)
 const SCHOLARSHIP_DB = [
   { name: "Jagananna Vidya Deevena", details: "Full fee reimbursement for ITI, B.Tech, MBA. Income < 2.5L." },
   { name: "Jagananna Vasathi Deevena", details: "₹20,000/year for hostel/food. Income < 2.5L." },
@@ -24,33 +35,27 @@ const SCHOLARSHIP_DB = [
   { name: "BOC Workers Scholarship", details: "₹20,000 for children of construction workers." }
 ];
 
-app.get('/', (req, res) => res.send('SamartAI Brain Online 🧠'));
+app.get('/', (req, res) => {
+  res.send('✅ SamartAI Brain is Online & Reachable!');
+});
 
 app.post('/chat', async (req, res) => {
   try {
     const { message } = req.body;
-    console.log("📩 User asked:", message);
+    console.log("📩 User Message:", message);
 
-    // 3. The "Super Prompt" (Injects Data dynamically)
     const prompt = `
-      SYSTEM: You are SamartAI, a helpful scholarship assistant.
-      
-      KNOWLEDGE BASE:
-      ${JSON.stringify(SCHOLARSHIP_DB)}
-
-      INSTRUCTIONS:
-      - Answer based ONLY on the Knowledge Base.
-      - If found, use emojis (🎓, 💰).
-      - If the user greets you, be polite.
-      - Keep it short.
-
+      SYSTEM: You are SamartAI.
+      DATA: ${JSON.stringify(SCHOLARSHIP_DB)}
       USER: "${message}"
+      INSTRUCTION: concise, friendly answer with emojis.
     `;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
+    console.log("🤖 Sending Reply");
     res.json({ reply: text });
 
   } catch (error) {
