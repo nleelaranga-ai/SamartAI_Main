@@ -19,7 +19,7 @@ if (!process.env.GEMINI_API_KEY) {
 
 // --- CONFIGURATION ---
 // 👇 TEMPORARY FIX: Paste your key directly here to bypass the error
-const API_KEY = process.env.GEMINI_API_KEY || "PASTE_YOUR_REAL_KEY_HERE"; 
+const API_KEY = process.env.GEMINI_API_KEY || "AIzaSyC7wg9UqA03h7ZilN3IHOrbPdAZaVQAPV4"; 
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 // We use the stable model version
