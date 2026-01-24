@@ -4,66 +4,94 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 const app = express();
-
-// 1. Allow any website to talk to this brain (CORS Fix)
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// 2. Initialize the AI Model
-// We use 'gemini-1.5-flash' because it is fast and cheap
+// --- 1. MEMORY STORAGE (Simple In-Memory Session) ---
+// In a real startup, you'd use a database like MongoDB.
+// For this demo, we store chat history here.
+const chatSessions = {}; 
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// 3. The Knowledge Base (The AI's "Memory")
+// --- 2. THE MASTER DATABASE (17+ Schemes) ---
 const SCHOLARSHIP_DB = [
-  { name: "Jagananna Vidya Deevena", details: "Full fee reimbursement for ITI, B.Tech, MBA, MCA. Income limit: < ₹2.5 Lakhs." },
-  { name: "Jagananna Vasathi Deevena", details: "₹20,000/year for hostel & food expenses. Income limit: < ₹2.5 Lakhs." },
-  { name: "Ambedkar Overseas Vidya Nidhi", details: "Financial aid of ₹15 Lakhs for SC/ST students studying Masters/PhD abroad. Income limit: < ₹6 Lakhs." },
-  { name: "Bharati Scheme", details: "₹20,000 financial aid for Brahmin students in B.Tech, Degree, or Pharmacy. Income limit: < ₹3 Lakhs." },
-  { name: "Free Laptops Scheme", details: "Free laptop for Differently Abled students in professional courses." },
-  { name: "BOC Workers Scholarship", details: "₹20,000 scholarship for children of construction workers." }
+  // General & SC/ST/BC
+  { name: "Jagananna Vidya Deevena (RTF)", details: "Full fee reimbursement for ITI, B.Tech, MBA. Income < 2.5L." },
+  { name: "Jagananna Vasathi Deevena (MTF)", details: "₹20,000/year for hostel/food. Income < 2.5L." },
+  { name: "Ambedkar Overseas Vidya Nidhi", details: "₹15 Lakhs for SC/ST students studying abroad. Income < 6L." },
+  { name: "NSP Post Matric", details: "Central scholarship for Minority students (Muslim/Christian/etc). Income < 2L." },
+  
+  // Brahmin Welfare
+  { name: "Bharati Scheme (Education)", details: "₹20,000 for Brahmin students in B.Tech/Degree. Income < 3L." },
+  { name: "Veda Vyasa Scheme", details: "₹5,000/year for Vedic students. Income < 3L." },
+  { name: "Bharati Overseas", details: "Up to ₹20 Lakhs for Brahmin students studying abroad." },
+
+  // Disabled & Workers
+  { name: "Free Laptops Scheme", details: "Free laptop for Differently Abled professional students. Income < 3L." },
+  { name: "Motorized Three Wheelers", details: "Free vehicle for Orthopedically challenged. Income < 3L." },
+  { name: "BOC Workers Scholarship", details: "₹20,000 for children of construction workers." }
 ];
 
-// Health Check
-app.get('/', (req, res) => {
-  res.send('🧠 SamartAI Neural Core Online');
-});
+app.get('/', (req, res) => res.send('🧠 SamartAI Memory Core Online'));
 
-// 4. The Smart Chat Endpoint
 app.post('/chat', async (req, res) => {
   try {
-    const { message } = req.body;
-    console.log("📩 User Input:", message);
+    const { message, userId = 'default_user' } = req.body;
+    console.log(`📩 [${userId}] says:`, message);
 
-    // This "System Prompt" tells the AI how to behave
+    // Initialize history for new users
+    if (!chatSessions[userId]) {
+      chatSessions[userId] = [];
+    }
+
+    // Add User Message to History
+    chatSessions[userId].push({ role: "user", content: message });
+
+    // Keep history manageable (last 10 messages)
+    if (chatSessions[userId].length > 10) chatSessions[userId].shift();
+
+    // --- 3. THE "CONTEXT-AWARE" PROMPT ---
+    const historyText = chatSessions[userId].map(msg => 
+      `${msg.role === 'user' ? 'USER' : 'AI'}: ${msg.content}`
+    ).join('\n');
+
     const prompt = `
-      ROLE: You are SamartAI, a futuristic and empathetic scholarship assistant for Indian students.
+      ROLE: You are SamartAI, an intelligent scholarship counselor.
       
-      KNOWLEDGE BASE:
+      YOUR KNOWLEDGE BASE:
       ${JSON.stringify(SCHOLARSHIP_DB)}
 
+      CURRENT CHAT HISTORY:
+      ${historyText}
+
       INSTRUCTIONS:
-      1. Answer the user's question using ONLY the Knowledge Base above.
-      2. If the user says "Hi" or "Hello", reply warmly (e.g., "Namaste! I am SamartAI. How can I help your education today?").
-      3. If the user asks for a specific course (e.g., "BTech"), find matching schemes.
-      4. Use emojis (🎓, 💰, 🚀) to make it look modern.
-      5. Keep answers short (max 3 sentences).
-      
-      USER MESSAGE: "${message}"
+      1. Use the CHAT HISTORY to remember the user's details (Caste, Income, Course).
+      2. If the user said "I am SC" previously, ONLY show SC schemes now.
+      3. If the user asks "Am I eligible?", check their details against the database.
+      4. If details are missing (e.g., income), ask for them politely.
+      5. Keep answers short, friendly, and use emojis.
+
+      RESPOND TO THE LAST USER MESSAGE:
     `;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const text = response.text();
+    const replyText = response.text();
 
-    res.json({ reply: text });
+    // Add AI Reply to History
+    chatSessions[userId].push({ role: "ai", content: replyText });
+
+    console.log("🤖 Reply sent.");
+    res.json({ reply: replyText });
 
   } catch (error) {
-    console.error("❌ Brain Error:", error);
-    res.status(500).json({ reply: "⚠️ My neural link is unstable. Please try again." });
+    console.error("❌ Error:", error);
+    res.status(500).json({ reply: "⚠️ Connection unstable. Please try again." });
   }
 });
 
-app.listen(PORT, () => console.log(`🚀 Server active on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
