@@ -3,6 +3,7 @@ import { MicrophoneButton } from '../components/MicrophoneButton';
 import { ChatWindow } from '../components/ChatWindow';
 import { useAppContext } from '../context/AppContext';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { sendMessageToAI } from '../services/geminiService';
 
 // --- 1. CONFIGURATION ---
 // ⚠️ IMPORTANT: Ensure your VITE_GEMINI_API_KEY is set in .env.local
@@ -65,11 +66,13 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
         USER MESSAGE: "${userQuery}"
       `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+const reply = await sendMessageToAI(inputText);
 
-      addMessage({ type: 'ai', text: text });
+addMessage({
+  type: "ai",
+  text: reply
+});
+
 
       // Speak (Text-to-Speech)
       if (text.length < 200) {
