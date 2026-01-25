@@ -20,7 +20,7 @@ app.post("/chat", async (req, res) => {
     const { message } = req.body;
 
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+      "https://router.huggingface.co/hf-inference/models/HuggingFaceH4/zephyr-7b-beta",
       {
         method: "POST",
         headers: {
@@ -29,12 +29,17 @@ app.post("/chat", async (req, res) => {
         },
         body: JSON.stringify({
           inputs: `
-You are SamartAI, an assistant helping Indian students find government scholarships.
-Be concise, friendly, and practical. Use emojis when helpful.
+You are SamartAI, an AI assistant helping Indian students find government scholarships.
+Be concise, friendly, and practical. Use emojis.
 
 User: ${message}
 Assistant:
-`
+`,
+          parameters: {
+            max_new_tokens: 200,
+            temperature: 0.3,
+            return_full_text: false
+          }
         })
       }
     );
@@ -44,13 +49,14 @@ Assistant:
     if (data.error) {
       console.error("❌ HF Error:", data);
       return res.json({
-        reply: "⚠️ AI is warming up. Please try again in a few seconds."
+        reply: "⏳ AI is starting up. Please try again in a few seconds."
       });
     }
 
     const reply =
-      data[0]?.generated_text?.split("Assistant:").pop()?.trim() ||
-      "⚠️ No response generated.";
+      Array.isArray(data) && data[0]?.generated_text
+        ? data[0].generated_text.trim()
+        : "⚠️ No response generated.";
 
     res.json({ reply });
 
