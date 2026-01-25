@@ -116,4 +116,5 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// Ensure the server listens on 0.0.0.0 for Render compatibility
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on port ${PORT}`));
