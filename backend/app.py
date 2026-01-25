@@ -1,12 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
+import os
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # ---------------- CONFIG ----------------
-genai.configure(api_key="YOUR_GEMINI_API_KEY")
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # ---------------- SCHOLARSHIP DB ----------------
 SCHOLARSHIPS_DB = [
@@ -33,7 +34,7 @@ def search_scholarships(query):
     return results
 
 model = genai.GenerativeModel(
-    model_name='gemini-2.5-flash-lite',
+    model_name='gemini-1.5-flash',
     tools=[search_scholarships]
 )
 
