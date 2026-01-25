@@ -11,18 +11,16 @@ const ChatBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
   const isUser = message.type === 'user';
   
   return (
-    <div className={`flex w-full mb-6 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`
-        max-w-[85%] sm:max-w-[75%] px-5 py-4 rounded-2xl shadow-lg relative
+        max-w-[85%] px-5 py-3 rounded-2xl relative text-sm sm:text-base font-light leading-relaxed
         ${isUser 
-          ? 'bg-gradient-to-br from-indigo-600 to-blue-600 text-white rounded-br-none' 
-          : 'bg-gray-800/90 text-gray-100 border border-gray-700/50 rounded-bl-none backdrop-blur-sm'
+          ? 'bg-indigo-600 text-white rounded-br-none shadow-lg shadow-indigo-500/20' 
+          : 'bg-white/5 text-gray-200 border border-white/5 rounded-bl-none backdrop-blur-md'
         }
       `}>
-        <div className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap font-light">
-           {message.text} 
-        </div>
-        <div className={`text-[10px] mt-2 opacity-60 ${isUser ? 'text-indigo-100' : 'text-gray-400'} text-right`}>
+        {message.text}
+        <div className={`text-[10px] mt-1 opacity-50 ${isUser ? 'text-indigo-100' : 'text-gray-400'} text-right`}>
           {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
@@ -38,18 +36,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoadingAIRes
   }, [messages, isLoadingAIResponse]);
 
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col space-y-4">
       {messages.map((msg) => (
         <ChatBubble key={msg.id} message={msg} />
       ))}
       
       {isLoadingAIResponse && (
-        <div className="flex justify-start animate-pulse">
-          <div className="bg-gray-800/50 px-4 py-3 rounded-2xl rounded-bl-none border border-gray-700/30 flex items-center space-x-2">
-            <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-            <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-          </div>
+        <div className="flex justify-start">
+           <div className="bg-white/5 px-4 py-3 rounded-2xl rounded-bl-none flex items-center space-x-1.5">
+            <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce"></span>
+            <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+            <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+           </div>
         </div>
       )}
       <div ref={messagesEndRef} />
