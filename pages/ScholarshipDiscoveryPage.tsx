@@ -1,15 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MicrophoneButton } from '../components/MicrophoneButton';
 import { ChatWindow } from '../components/ChatWindow';
 import { useAppContext } from '../context/AppContext';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { sendMessageToAI } from '../services/geminiService';
 
-// --- 1. CONFIGURATION ---
-// ⚠️ IMPORTANT: Ensure your VITE_GEMINI_API_KEY is set in .env.local
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
-// --- 2. MASTER DATABASE (Inlined for reliability) ---
+// --- 1. MASTER DATABASE (Fall-back only if backend is down) ---
 const SCHOLARSHIP_DB = [
   { name: "Jagananna Vidya Deevena", category: "All", details: "Full fee reimbursement for ITI, B.Tech, MBA. Income < 2.5L.", link: "https://jnanabhumi.ap.gov.in/" },
   { name: "Jagananna Vasathi Deevena", category: "All", details: "₹20,000/year for hostel & food. Income < 2.5L.", link: "https://jnanabhumi.ap.gov.in/" },
@@ -30,7 +25,7 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
     if (messages.length === 0) {
       addMessage({
         type: 'ai',
-        text: `👋 **Namaste! I am SamartAI.**\n\nI can help you find scholarships.\n\nTry asking:\n✨ *"I am a Brahmin student"* \n✨ *"Scholarships for SC BTech"* \n✨ *"Free laptop scheme"*`
+        text: `👋 **Namaste! I am SamartAI.**\n\nI am connected to the government database. Ask me anything like:\n✨ *"I need a laptop scheme"* \n✨ *"Scholarships for BTech students"* \n✨ *"Scholarships for SC students"*`
       });
     }
   }, []);
@@ -44,53 +39,35 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
     setIsLoadingAI(true);
 
     try {
-      if (!API_KEY) throw new Error("API Key missing. Check .env.local");
+      // --- 2. BACKEND COMMUNICATION ---
+      // This calls your Render Backend. Ensure VITE_BACKEND_URL is set in Render.
+      const reply = await sendMessageToAI(userQuery);
 
-      // --- 3. THE BRAIN LOGIC ---
-      const genAI = new GoogleGenerativeAI(API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      addMessage({
+        type: "ai",
+        text: reply
+      });
 
-      const prompt = `
-        SYSTEM: You are SamartAI, a helpful scholarship counselor.
-        
-        KNOWLEDGE BASE:
-        ${JSON.stringify(SCHOLARSHIP_DB)}
-
-        INSTRUCTIONS:
-        1. Answer the user's question using ONLY the Knowledge Base above.
-        2. If the user greets you, reply warmly.
-        3. If you find a match, show the Name, Details, and Link.
-        4. Use emojis (🎓, 💰, 🔗).
-        5. Keep answers short (max 3 sentences).
-        
-        USER MESSAGE: "${userQuery}"
-      `;
-
-         const reply = await sendMessageToAI(userQuery);
-          addMessage({
-          type: "ai",
-          text: reply
-           });
-
-
-      // Speak (Text-to-Speech)
-      if (reply.length < 200) {
-  const utterance = new SpeechSynthesisUtterance(reply.replace(/[*#]/g, ''));
-  window.speechSynthesis.speak(utterance);
-}
+      // Text-to-Speech (only if reply is short)
+      if (reply.length < 250) {
+        const utterance = new SpeechSynthesisUtterance(reply.replace(/[*#]/g, ''));
+        window.speechSynthesis.speak(utterance);
+      }
 
     } catch (error: any) {
       console.error("AI Error:", error);
-      let msg = "⚠️ Connection Error.";
-      if (error.message.includes("404")) msg = "⚠️ Model Error. Please restart.";
-      if (error.message.includes("429")) msg = "⚠️ Too many requests. Please wait.";
-      addMessage({ type: 'ai', text: msg });
+      
+      // FALLBACK: If Render backend fails, provide helpful offline info
+      addMessage({ 
+        type: 'ai', 
+        text: "⚠️ (Offline Mode) I'm having trouble reaching my main brain, but I found these for you: \n\n🎓 **Jagananna Deevena** (All) \n🎓 **Ambedkar Overseas** (SC/ST) \n🎓 **Free Laptops** (Disabled)" 
+      });
     } finally {
       setIsLoadingAI(false);
     }
   };
 
-  // --- 4. VOICE LOGIC ---
+  // --- 3. VOICE LOGIC ---
   const toggleRecording = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return alert("Use Chrome for Voice.");
@@ -105,7 +82,6 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
         const transcript = event.results[0][0].transcript;
         setInputText(transcript);
         setIsRecording(false);
-        // handleSendMessage(); // Uncomment to auto-send
       };
       recognition.start();
     }
@@ -124,13 +100,13 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
         {/* Input Bar */}
         <div className="p-4 bg-gray-900/40 border-t border-white/5 backdrop-blur-md">
           <div className="flex items-center gap-3 bg-black/40 rounded-full p-2 border border-white/10 shadow-inner">
-            <MicrophoneButton onToggleRecording={toggleRecording} isLoading={false} />
+            <MicrophoneButton onToggleRecording={toggleRecording} isLoading={isRecording} />
             
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder="Type your message..."
               className="flex-grow bg-transparent text-white px-3 py-2 focus:outline-none placeholder-gray-500 text-lg font-light tracking-wide"
             />
