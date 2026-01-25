@@ -1,28 +1,42 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MicrophoneButton } from '../components/MicrophoneButton';
 import { ChatWindow } from '../components/ChatWindow';
 import { useAppContext } from '../context/AppContext';
+import { scholarshipService } from '../services/scholarshipService'; // Import your local DB service
 import { USER_MESSAGES } from '../constants';
-import { v4 as uuidv4 } from 'uuid';
-
-// 👇 YOUR LIVE RENDER BACKEND URL
-const BACKEND_URL = "https://samartai-dup.onrender.com"; 
 
 export const ScholarshipDiscoveryPage: React.FC = () => {
   const { messages, addMessage, isRecording, setIsRecording, selectedLanguage } = useAppContext();
   const messagesText = USER_MESSAGES[selectedLanguage];
   const [inputText, setInputText] = useState('');
   const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // --- CONFIGURATION ---
+  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
   
-  // 🔑 Generate a unique ID so the bot remembers THIS user
-  const userId = useRef(uuidv4());
+  // 1. Load your local scholarship data
+  const [dbContext, setDbContext] = useState("");
+
+  useEffect(() => {
+    const loadData = async () => {
+      const allSchemes = await scholarshipService.getAllScholarships();
+      // Convert the DB object to a readable string for the AI
+      const contextString = allSchemes.map(s => 
+        `- Scheme Name: "${s.name}"\n  Category: ${s.category}\n  Income Limit: ${s.amount}\n  Description: ${s.description}\n  Link: ${s.applicationLink}`
+      ).join('\n\n');
+      setDbContext(contextString);
+    };
+    loadData();
+  }, []);
 
   // Initial Welcome
   useEffect(() => {
     if (messages.length === 0) {
       addMessage({
         type: 'ai',
-        text: `👋 **Namaste!**\n\nI am your Personal Scholarship Counselor.\n\nTell me about yourself:\n*"I am an SC student doing BTech with 1 Lakh income."*`
+        text: `👋 **Namaste! I am SamartAI.**\n\nI am connected to the government database. Ask me anything like:\n\n✨ *"I need a laptop scheme"* \n✨ *"Scholarships for BTech students"*`
       });
     }
   }, []);
@@ -30,35 +44,54 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
     const userQuery = inputText;
-    
     setInputText('');
     addMessage({ type: 'user', text: userQuery });
     setIsLoadingAI(true);
 
     try {
-      console.log("📡 Connecting to Brain:", BACKEND_URL);
+      if (!API_KEY) throw new Error("API Key missing");
 
-      // 🛑 OLD WAY (Local Filter) - DELETED
-      // const results = await scholarshipService.searchScholarships(userQuery);
+      // 2. Initialize Gemini
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-      // ✅ NEW WAY (Smart AI Backend)
-      const response = await fetch(`${BACKEND_URL}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: userQuery,
-          userId: userId.current // Send ID for memory
-        })
-      });
+      // 3. Construct the "Super Prompt"
+      const prompt = `
+        SYSTEM ROLE: You are SamartAI, a futuristic and helpful scholarship assistant for students in India.
+        
+        YOUR KNOWLEDGE BASE (Use ONLY this data to recommend schemes):
+        ${dbContext}
 
-      if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+        INSTRUCTIONS:
+        1. If the user greets you (hi, hello), reply warmly and ask how you can help.
+        2. If the user asks for a scholarship, search YOUR KNOWLEDGE BASE above.
+        3. If you find matches, list them with emojis (🎓, 💰, 🔗).
+        4. If the user input is gibberish or unclear, politely ask them to clarify.
+        5. Keep responses concise and friendly.
+        
+        USER QUERY: "${userQuery}"
+      `;
 
-      const data = await response.json();
-      addMessage({ type: 'ai', text: data.reply });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const replyText = response.text();
+
+      addMessage({ type: 'ai', text: replyText });
 
     } catch (error) {
-      console.error("Connection Error:", error);
-      addMessage({ type: 'ai', text: "⚠️ Server is waking up (Cold Start). Please try again in 30s!" });
+      console.error("AI Error:", error);
+      // Fallback to local search if AI fails
+      try {
+        const localResults = await scholarshipService.searchScholarships(userQuery);
+        if (localResults.length > 0) {
+           const resultText = localResults.map(s => `🎓 **${s.name}**\n🔗 [Apply](${s.applicationLink})`).join('\n\n');
+           addMessage({ type: 'ai', text: `(Offline Mode) Found these:\n\n${resultText}` });
+        } else {
+           addMessage({ type: 'ai', text: "I'm having trouble connecting to the cloud, and I couldn't find local matches." });
+        }
+      } catch (e) {
+        addMessage({ type: 'ai', text: messagesText.errorOccurred });
+      }
     } finally {
       setIsLoadingAI(false);
     }
@@ -79,6 +112,8 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
         const transcript = event.results[0][0].transcript;
         setInputText(transcript);
         setIsRecording(false);
+        // Optional: auto-send
+        // handleSendMessage(); 
       };
       recognition.start();
     }
@@ -98,10 +133,11 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
           <ChatWindow messages={messages} isLoadingAIResponse={isLoadingAI} />
         </div>
 
-        {/* Input Bar */}
+        {/* 🚀 FUTURISTIC INPUT BAR */}
         <div className="p-4 bg-gray-900/40 border-t border-white/5 backdrop-blur-md">
           <div className="flex items-center gap-3 bg-black/40 rounded-full p-2 border border-white/10 shadow-inner">
             
+            {/* The New Small Mic */}
             <MicrophoneButton onToggleRecording={toggleRecording} isLoading={false} />
             
             <input
@@ -132,6 +168,19 @@ export const ScholarshipDiscoveryPage: React.FC = () => {
                 </svg>
               )}
             </button>
+          </div>
+          
+          {/* Quick Chips */}
+          <div className="flex gap-2 mt-3 overflow-x-auto no-scrollbar justify-center">
+            {["💻 Free Laptop", "💰 BTech Fees", "🌍 Study Abroad"].map((chip, idx) => (
+              <button 
+                key={idx}
+                onClick={() => { setInputText(chip); handleSendMessage(); }} 
+                className="whitespace-nowrap px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-teal-300 transition-all hover:scale-105 backdrop-blur-sm"
+              >
+                {chip}
+              </button>
+            ))}
           </div>
         </div>
       </div>
