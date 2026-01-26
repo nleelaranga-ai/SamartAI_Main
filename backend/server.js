@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import fetch from "node-fetch";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
 
@@ -10,11 +10,39 @@ app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
-const HF_API_KEY = process.env.HF_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+// ---------------- GEMINI INIT ----------------
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// ---------------- LOCAL SCHOLARSHIP DATA ----------------
+const SCHOLARSHIPS = [
+  {
+    name: "Jagananna Vidya Deevena (RTF)",
+    details: "Full tuition fee reimbursement for ITI, Polytechnic, Degree, BTech, MBA, MCA. For SC/ST/BC/EBC/Minorities."
+  },
+  {
+    name: "Jagananna Vasathi Deevena (MTF)",
+    details: "Financial support for hostel and food expenses for eligible students."
+  },
+  {
+    name: "Ambedkar Overseas Vidya Nidhi",
+    details: "Financial assistance for SC/ST students pursuing Masters or PhD abroad."
+  },
+  {
+    name: "Bharati Scheme",
+    details: "Financial aid for Brahmin students studying Degree or Professional courses."
+  },
+  {
+    name: "Jagananna Vidya Kanuka",
+    details: "Free laptops or tablets for eligible students."
+  }
+];
 
 // ---------------- HEALTH ----------------
 app.get("/", (req, res) => {
-  res.send("🧠 SamartAI Backend is Online");
+  res.send("🧠 SamartAI Gemini Backend Online");
 });
 
 // ---------------- CHAT ----------------
@@ -23,67 +51,46 @@ app.post("/chat", async (req, res) => {
     const { message } = req.body;
 
     if (!message) {
-      return res.json({ reply: "⚠️ Please send a message." });
+      return res.json({ reply: "⚠️ Please ask a question." });
     }
 
-    const response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/mistralai/Mistral-7B-Instruct-v0.2",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${HF_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          inputs: `
+    const context = SCHOLARSHIPS.map(
+      s => `• ${s.name}: ${s.details}`
+    ).join("\n");
+
+    const prompt = `
 You are SamartAI, an AI assistant helping Indian students find government scholarships.
-Be concise, friendly, and practical. Use emojis.
 
-User: ${message}
-Assistant:
-`,
-          parameters: {
-            max_new_tokens: 200,
-            temperature: 0.3,
-            return_full_text: false
-          }
-        })
-      }
-    );
+RULES:
+- Use ONLY the scholarships listed below
+- Do NOT invent new schemes
+- If none match, explain clearly why
+- Be friendly and simple
+- Use emojis sparingly
 
-    const rawText = await response.text();
+SCHOLARSHIPS:
+${context}
 
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch {
-      return res.json({
-        reply: "⚠️ AI is warming up. Please try again in a moment."
-      });
-    }
+USER QUESTION:
+${message}
 
-    if (data.error) {
-      return res.json({
-        reply: "⏳ AI is starting up. Please try again in a few seconds."
-      });
-    }
+ANSWER:
+`;
 
-    const reply =
-      Array.isArray(data) && data[0]?.generated_text
-        ? data[0].generated_text.trim()
-        : "⚠️ I couldn’t generate a response right now.";
+    const result = await model.generateContent(prompt);
+    const reply = result.response.text();
 
     res.json({ reply });
 
   } catch (error) {
-    console.error("❌ Backend Error:", error);
+    console.error("❌ Gemini Error:", error);
     res.json({
-      reply: "⚠️ My brain is restarting. Please try again."
+      reply: "⚠️ AI is temporarily unavailable. Please try again."
     });
   }
 });
 
 // ---------------- START ----------------
 app.listen(PORT, () => {
-  console.log(`🚀 SamartAI Backend running on port ${PORT}`);
+  console.log(`🚀 SamartAI Gemini backend running on port ${PORT}`);
 });
