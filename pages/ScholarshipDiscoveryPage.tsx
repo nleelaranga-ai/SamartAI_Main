@@ -3,7 +3,7 @@ import { MicrophoneButton } from '../components/MicrophoneButton';
 import { ChatWindow } from '../components/ChatWindow';
 import { useAppContext } from '../context/AppContext';
 import { sendMessageToAI } from '../services/geminiService';
-
+import { scholarshipService } from '../services/scholarshipService';
 // --- 1. MASTER DATABASE (Fall-back only if backend is down) ---
 const SCHOLARSHIP_DB = [
   { name: "Jagananna Vidya Deevena", category: "All", details: "Full fee reimbursement for ITI, B.Tech, MBA. Income < 2.5L.", link: "https://jnanabhumi.ap.gov.in/" },
