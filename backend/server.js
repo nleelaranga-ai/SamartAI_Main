@@ -12,33 +12,28 @@ app.use(express.json());
 const PORT = process.env.PORT || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// ---------------- GEMINI INIT ----------------
+// ---------------- INIT GEMINI ----------------
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // ---------------- LOCAL SCHOLARSHIP DATA ----------------
-const SCHOLARSHIPS = [
-  {
-    name: "Jagananna Vidya Deevena (RTF)",
-    details: "Full tuition fee reimbursement for ITI, Polytechnic, Degree, BTech, MBA, MCA. For SC/ST/BC/EBC/Minorities."
-  },
-  {
-    name: "Jagananna Vasathi Deevena (MTF)",
-    details: "Financial support for hostel and food expenses for eligible students."
-  },
-  {
-    name: "Ambedkar Overseas Vidya Nidhi",
-    details: "Financial assistance for SC/ST students pursuing Masters or PhD abroad."
-  },
-  {
-    name: "Bharati Scheme",
-    details: "Financial aid for Brahmin students studying Degree or Professional courses."
-  },
-  {
-    name: "Jagananna Vidya Kanuka",
-    details: "Free laptops or tablets for eligible students."
-  }
-];
+const SCHOLARSHIPS = `
+1. Jagananna Vidya Deevena (RTF):
+   Full tuition fee reimbursement for ITI, Polytechnic, Degree, BTech, MBA, MCA.
+   Eligible: SC, ST, BC, EBC, Minority students.
+
+2. Jagananna Vasathi Deevena (MTF):
+   Financial support for hostel and food expenses.
+
+3. Ambedkar Overseas Vidya Nidhi:
+   Financial assistance for SC/ST students pursuing Masters or PhD abroad.
+
+4. Bharati Scheme:
+   Financial aid for Brahmin students studying Degree or Professional courses.
+
+5. Jagananna Vidya Kanuka:
+   Free laptops or tablets for eligible students.
+`;
 
 // ---------------- HEALTH ----------------
 app.get("/", (req, res) => {
@@ -54,22 +49,18 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: "⚠️ Please ask a question." });
     }
 
-    const context = SCHOLARSHIPS.map(
-      s => `• ${s.name}: ${s.details}`
-    ).join("\n");
-
     const prompt = `
 You are SamartAI, an AI assistant helping Indian students find government scholarships.
 
-RULES:
+STRICT RULES:
 - Use ONLY the scholarships listed below
 - Do NOT invent new schemes
-- If none match, explain clearly why
-- Be friendly and simple
-- Use emojis sparingly
+- If no scholarship applies, explain clearly why
+- Be friendly and conversational
+- Use simple language and emojis sparingly
 
 SCHOLARSHIPS:
-${context}
+${SCHOLARSHIPS}
 
 USER QUESTION:
 ${message}
