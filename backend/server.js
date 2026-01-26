@@ -12,35 +12,42 @@ app.use(express.json());
 const PORT = process.env.PORT || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// ---------------- INIT GEMINI ----------------
+// ---------- INIT GEMINI ----------
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash"
+});
 
-// ---------------- LOCAL SCHOLARSHIP DATA ----------------
+// ---------- VERIFIED SCHOLARSHIP DATA ----------
 const SCHOLARSHIPS = `
-1. Jagananna Vidya Deevena (RTF):
-   Full tuition fee reimbursement for ITI, Polytechnic, Degree, BTech, MBA, MCA.
-   Eligible: SC, ST, BC, EBC, Minority students.
+1. Jagananna Vidya Deevena (RTF)
+   - Full tuition fee reimbursement
+   - Courses: ITI, Polytechnic, Degree, BTech, MBA, MCA
+   - Eligible: SC, ST, BC, EBC, Minority students
 
-2. Jagananna Vasathi Deevena (MTF):
-   Financial support for hostel and food expenses.
+2. Jagananna Vasathi Deevena (MTF)
+   - Hostel and food allowance
+   - Eligible students in ITI, Polytechnic, Degree, Engineering
 
-3. Ambedkar Overseas Vidya Nidhi:
-   Financial assistance for SC/ST students pursuing Masters or PhD abroad.
+3. Ambedkar Overseas Vidya Nidhi
+   - Financial assistance for Masters / PhD abroad
+   - Eligible: SC / ST students only
 
-4. Bharati Scheme:
-   Financial aid for Brahmin students studying Degree or Professional courses.
+4. Bharati Scheme
+   - Financial aid for Brahmin students
+   - Degree and Professional courses
 
-5. Jagananna Vidya Kanuka:
-   Free laptops or tablets for eligible students.
+5. Jagananna Vidya Kanuka
+   - Free laptop or tablet
+   - Eligible students in higher education
 `;
 
-// ---------------- HEALTH ----------------
+// ---------- HEALTH ----------
 app.get("/", (req, res) => {
   res.send("🧠 SamartAI Gemini Backend Online");
 });
 
-// ---------------- CHAT ----------------
+// ---------- CHAT ----------
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -50,29 +57,28 @@ app.post("/chat", async (req, res) => {
     }
 
     const prompt = `
-You are SamartAI, an AI assistant helping Indian students find government scholarships.
+You are SamartAI, an AI assistant for Indian government scholarships.
 
 STRICT RULES:
-- Use ONLY the scholarships listed below
-- Do NOT invent new schemes
-- If no scholarship applies, explain clearly why
-- Be friendly and conversational
-- Use simple language and emojis sparingly
+- Use ONLY the scholarship data below
+- Do NOT invent schemes
+- If none apply, explain clearly why
+- Simple language, friendly tone
+- Emojis allowed but minimal
 
-SCHOLARSHIPS:
+SCHOLARSHIP DATA:
 ${SCHOLARSHIPS}
 
 USER QUESTION:
 ${message}
 
-ANSWER:
+FINAL ANSWER:
 `;
 
     const result = await model.generateContent(prompt);
     const reply = result.response.text();
 
     res.json({ reply });
-
   } catch (error) {
     console.error("❌ Gemini Error:", error);
     res.json({
@@ -81,7 +87,7 @@ ANSWER:
   }
 });
 
-// ---------------- START ----------------
+// ---------- START ----------
 app.listen(PORT, () => {
   console.log(`🚀 SamartAI Gemini backend running on port ${PORT}`);
 });
