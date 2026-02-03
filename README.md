@@ -80,6 +80,9 @@ User ───► Web / Telegram ───► AI Backend ───► Scholarshi
                 │  (Chat UI)   │
                 └──────────────┘
 
+
+
+
 ---
 
 ## ⚙️ Technical Architecture
