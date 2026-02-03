@@ -13,6 +13,11 @@
   🌍 Inclusive • 🤖 AI-Powered • 🎓 Impact-Driven
 </p>
 
+<p align="center">
+  🌐 <a href="https://samart-ai-dup.vercel.app" target="_blank"><strong>Live Web App</strong></a> &nbsp; | &nbsp;
+  💬 <a href="https://t.me/t.me/SamartAI_Bot" target="_blank"><strong>Telegram Bot</strong></a>
+</p>
+
 ---
 
 ## 🚀 Overview
