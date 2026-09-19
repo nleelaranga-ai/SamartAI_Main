@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/samartai-logo.png" alt="SamartAI Logo" width="120" />
+<img src="./assets/samartai-logo.png" alt="SamartAI Logo" width="150" />
 
 # 🎓 SamartAI — Accessibility-First Conversational Scholarship Intelligence Platform
 
