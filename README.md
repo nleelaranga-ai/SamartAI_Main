@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎓 SmartAI — Multimodal RAG & Academic Authenticity Engine
+# 🎓 SamartAI — Multimodal RAG & Academic Authenticity Engine
 
 **Smart India Hackathon (SIH 25029) Flagship Platform**  
 *Computer Vision OCR, SHA-256 Cryptographic Fingerprinting & Dense Hybrid Vector RAG for 1,200+ Scholarships*
